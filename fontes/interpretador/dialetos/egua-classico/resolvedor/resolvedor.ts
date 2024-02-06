@@ -1,7 +1,8 @@
-import { AcessoMetodoOuPropriedade, Construto, ExpressaoRegular, FimPara, FormatacaoEscrita, QualTipo, Super, TipoDe, Variavel } from '../../../../construtos';
+import { AcessoMetodoOuPropriedade, Construto, ExpressaoRegular, FimPara, FormatacaoEscrita, QualTipo, Super, TipoDe, Tupla, Variavel } from '../../../../construtos';
 import {
     Aleatorio,
     Bloco,
+    CabecalhoPrograma,
     Const,
     ConstMultiplo,
     Declaracao,
@@ -14,6 +15,7 @@ import {
     Var,
     VarMultiplo,
 } from '../../../../declaracoes';
+import { InicioAlgoritmo } from '../../../../declaracoes/inicio-algoritmo';
 import { EspacoVariaveis } from '../../../../espaco-variaveis';
 import { InterpretadorInterface, SimboloInterface } from '../../../../interfaces';
 import { PilhaEscoposExecucaoInterface } from '../../../../interfaces/pilha-escopos-execucao-interface';
@@ -76,9 +78,23 @@ export class ResolvedorEguaClassico implements ResolvedorInterface, Interpretado
         this.classeAtual = TipoClasse.NENHUM;
         this.cicloAtual = TipoClasse.NENHUM;
     }
+
+    visitarDeclaracaoInicioAlgoritmo(declaracao: InicioAlgoritmo): Promise<any> {
+        throw new Error('Método não implementado.');
+    }
+
+    visitarDeclaracaoCabecalhoPrograma(declaracao: CabecalhoPrograma): Promise<any> {
+        throw new Error('Método não implementado.');
+    }
+
+    visitarExpressaoTupla(expressao: Tupla): Promise<any> {
+        throw new Error('Método não implementado.');
+    }
+
     visitarExpressaoAcessoElementoMatriz(expressao: any) {
         throw new Error('Método não implementado.');
     }
+
     visitarExpressaoAtribuicaoPorIndicesMatriz(expressao: any): Promise<any> {
         throw new Error('Método não implementado.');
     }

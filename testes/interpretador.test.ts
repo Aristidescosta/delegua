@@ -15,6 +15,82 @@ describe('Interpretador', () => {
         });
 
         describe('Cenários de sucesso', () => {
+
+            describe('Descrever objetos - paraTexto()', () => {
+                it('Descrever função com parametros e tipos - DeleguaFuncao', async () => {
+                    let _saida: string = ""
+                    const retornoLexador = lexador.mapear([
+                        "funcao retorneAlgo(a: inteiro, b: texto) {",
+                        "}",
+                        "escreva(retorneAlgo)"
+                    ], -1);
+                    const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+    
+                    interpretador.funcaoDeRetorno = (saida: any) => {
+                        _saida = saida;
+                    }
+    
+                    await interpretador.interpretar(retornoAvaliadorSintatico.declaracoes);
+    
+                    expect(_saida).toBe("<função retorneAlgo argumentos=<a: inteiro, b: texto>>");
+                });
+
+                it('Descrever função com parametros sem tipos - DeleguaFuncao', async () => {
+                    let _saida: string = ""
+                    const retornoLexador = lexador.mapear([
+                        "funcao retorneAlgo(a, b) {",
+                        "}",
+                        "escreva(retorneAlgo)"
+                    ], -1);
+                    const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+    
+                    interpretador.funcaoDeRetorno = (saida: any) => {
+                        _saida = saida;
+                    }
+    
+                    await interpretador.interpretar(retornoAvaliadorSintatico.declaracoes);
+    
+                    expect(_saida).toBe("<função retorneAlgo argumentos=<a, b>>");
+                });
+
+                it('Descrever função com retorno - DeleguaFuncao', async () => {
+                    let _saida: string = ""
+                    const retornoLexador = lexador.mapear([
+                        "funcao retorneAlgo() {",
+                        "   retorna \"Algo\"",
+                        "}",
+                        "escreva(retorneAlgo)"
+                    ], -1);
+                    const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+    
+                    interpretador.funcaoDeRetorno = (saida: any) => {
+                        _saida = saida;
+                    }
+    
+                    await interpretador.interpretar(retornoAvaliadorSintatico.declaracoes);
+    
+                    expect(_saida).toBe("<função retorneAlgo retorna=<'Algo'>>");
+                });
+
+                it('Descrever nome função - DeleguaFuncao', async () => {
+                    let _saida: string = ""
+                    const retornoLexador = lexador.mapear([
+                        "funcao retorneAlgo() {",
+                        "}",
+                        "escreva(retorneAlgo)"
+                    ], -1);
+                    const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+    
+                    interpretador.funcaoDeRetorno = (saida: any) => {
+                        _saida = saida;
+                    }
+    
+                    await interpretador.interpretar(retornoAvaliadorSintatico.declaracoes);
+    
+                    expect(_saida).toBe("<função retorneAlgo>");
+                });
+            })
+
             describe('Atribuições', () => {
                 it('Trivial var/variavel', async () => {
                     const retornoLexador = lexador.mapear([
@@ -305,7 +381,8 @@ describe('Interpretador', () => {
                         'objeto',
                         'objeto',
                         'nulo',
-                        'texto'
+                        'texto',
+                        'número'
                     ]
                     const retornoLexador = lexador.mapear([
                         "escreva(tipo de verdadeiro)",
@@ -332,6 +409,8 @@ describe('Interpretador', () => {
                         "escreva(tipo de OutroTeste)",
                         "escreva(tipo de nulo)",
                         "escreva(tipo de tipo de tipo de \"a\")",
+                        "var letras = \"abc\"",
+                        "escreva(tipo de letras.tamanho())",
                     ], -1);
                     const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
 
@@ -1322,23 +1401,49 @@ describe('Interpretador', () => {
             });
 
             describe('Métodos de primitivas com dependência no Interpretador', () => {
-                it('ordenar() de vetor com parâmetro função', async () => {
-                    const retornoLexador = lexador.mapear([
-                        "var numeros = [4, 2, 12, 8];",
-                        "numeros.ordenar(funcao(a, b) {",
-                        "    retorna b - a;",
-                        "});",
-                        "escreva(numeros);"
-                    ], -1);
-                    const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+                describe('Dicionários', () => {
+                    it('chaves() e valores()', async () => {
+                        const retornoLexador = lexador.mapear([
+                            `var meuDicionario = {"a": 1, "b": 2, "c": 3}`,
+                            `escreva(meuDicionario.chaves())`,
+                            `escreva(meuDicionario.valores())`
+                        ], -1);
 
-                    interpretador.funcaoDeRetorno = (saida: string) => {
-                        expect(saida).toEqual('12,8,4,2');
-                    }
+                        const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+                        const saidas: string[] = [];
+    
+                        interpretador.funcaoDeRetorno = (saida: string) => {
+                            saidas.push(saida);
+                        }
+    
+                        const retornoInterpretador = await interpretador.interpretar(retornoAvaliadorSintatico.declaracoes);
+    
+                        expect(retornoInterpretador.erros).toHaveLength(0);
+                        expect(saidas).toHaveLength(2);
+                        expect(saidas[0]).toEqual('a,b,c');
+                        expect(saidas[1]).toEqual('1,2,3');
+                    });
+                });
 
-                    const retornoInterpretador = await interpretador.interpretar(retornoAvaliadorSintatico.declaracoes);
-
-                    expect(retornoInterpretador.erros).toHaveLength(0);
+                describe('Vetores', () => {
+                    it('ordenar() de vetor com parâmetro função', async () => {
+                        const retornoLexador = lexador.mapear([
+                            "var numeros = [4, 2, 12, 8];",
+                            "numeros.ordenar(funcao(a, b) {",
+                            "    retorna b - a;",
+                            "});",
+                            "escreva(numeros);"
+                        ], -1);
+                        const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+    
+                        interpretador.funcaoDeRetorno = (saida: string) => {
+                            expect(saida).toEqual('12,8,4,2');
+                        }
+    
+                        const retornoInterpretador = await interpretador.interpretar(retornoAvaliadorSintatico.declaracoes);
+    
+                        expect(retornoInterpretador.erros).toHaveLength(0);
+                    });
                 });
             })
 
@@ -1519,6 +1624,20 @@ describe('Interpretador', () => {
 
                     expect(retornoInterpretador.erros[0].erroInterno.mensagem).toBe(
                         'Constante \'c\' não pode receber novos valores.'
+                    );
+                });
+
+                it('Tupla - Dupla', async () => {
+                    const retornoLexador = lexador.mapear([
+                        "var t = [(1, 2)]",
+                        "t[0] = 3",
+                    ], -1);
+                    const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+
+                    const retornoInterpretador = await interpretador.interpretar(retornoAvaliadorSintatico.declaracoes);
+
+                    expect(retornoInterpretador.erros[0].erroInterno.mensagem).toBe(
+                        'Não é possível modificar uma tupla. As tuplas são estruturas de dados imutáveis.'
                     );
                 });
             })

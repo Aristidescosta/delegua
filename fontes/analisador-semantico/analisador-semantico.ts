@@ -1,7 +1,8 @@
-import { Agrupamento, Atribuir, Binario, Chamada, Construto, ExpressaoRegular, FimPara, FormatacaoEscrita, FuncaoConstruto, Literal, Logico, Super, TipoDe, Variavel, Vetor } from '../construtos';
+import { Agrupamento, Atribuir, Binario, Chamada, Construto, ExpressaoRegular, FimPara, FormatacaoEscrita, FuncaoConstruto, Literal, Logico, Super, TipoDe, Tupla, Variavel, Vetor } from '../construtos';
 import {
     Aleatorio,
     Bloco,
+    CabecalhoPrograma,
     Classe,
     Const,
     ConstMultiplo,
@@ -27,6 +28,7 @@ import {
     Var,
     VarMultiplo,
 } from '../declaracoes';
+import { InicioAlgoritmo } from '../declaracoes/inicio-algoritmo';
 import { SimboloInterface } from '../interfaces';
 import { AnalisadorSemanticoInterface } from '../interfaces/analisador-semantico-interface';
 import { DiagnosticoAnalisadorSemantico, DiagnosticoSeveridade } from '../interfaces/erros';
@@ -61,6 +63,14 @@ export class AnalisadorSemantico implements AnalisadorSemanticoInterface {
         this.diagnosticos = [];
     }
 
+    visitarDeclaracaoCabecalhoPrograma(declaracao: CabecalhoPrograma): Promise<any> {
+        return Promise.resolve();
+    }
+
+    visitarExpressaoTupla(expressao: Tupla): Promise<any> {
+        return Promise.resolve();
+    }
+
     visitarDeclaracaoAleatorio(declaracao: Aleatorio): Promise<any> {
         return Promise.resolve();
     }
@@ -68,10 +78,16 @@ export class AnalisadorSemantico implements AnalisadorSemanticoInterface {
     visitarExpressaoAcessoElementoMatriz(expressao: any) {
         return Promise.resolve();
     }
+
     visitarExpressaoAtribuicaoPorIndicesMatriz(expressao: any): Promise<any> {
         return Promise.resolve();
     }
+
     visitarExpressaoExpressaoRegular(expressao: ExpressaoRegular): Promise<any> {
+        return Promise.resolve();
+    }
+
+    visitarDeclaracaoInicioAlgoritmo(declaracao: InicioAlgoritmo): Promise<any> {
         return Promise.resolve();
     }
 

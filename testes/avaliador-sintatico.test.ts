@@ -145,36 +145,182 @@ describe('Avaliador sintático', () => {
                 expect(retornoAvaliadorSintatico.erros).toHaveLength(0);
             });
 
-            it('Sucesso - decorador de classe', () => {
-                const retornoLexador = lexador.mapear([
-                    '@meu.decorador1',
-                    '@meu.decorador2',
-                    'classe Teste {',
-                        'testeFuncao() {',
-                          'escreva("olá")',
+            describe('Classes, propriedades e métodos', () => {
+                it('Trivial', () => {
+                    const retornoLexador = lexador.mapear([
+                        'classe Triangulo {',
+                        '    base: numero;',
+                        '    altura: número',
+                        '    area() {',
+                        '        escreva((isto.base * isto.altura) / 2)',
+                        '    }',
                         '}',
-                    '}',
-                ], -1);
+                    ], -1);
 
-                const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
-    
-                expect(retornoAvaliadorSintatico.erros).toHaveLength(0);
+                    const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+        
+                    expect(retornoAvaliadorSintatico.erros).toHaveLength(0);
+                });
             });
 
-            it('Sucesso - decorador de método de classe', () => {
-                const retornoLexador = lexador.mapear([
-                    '@meu.decorador1',
-                    'classe Teste {',
+            describe('Decoradores', () => {
+                it('Sucesso - decorador de classe simples', () => {
+                    const retornoLexador = lexador.mapear([
+                        '@meu.decorador1',
                         '@meu.decorador2',
-                        'testeFuncao() {',
-                          'escreva("olá")',
+                        'classe Teste {',
+                            'testeFuncao() {',
+                              'escreva("olá")',
+                            '}',
                         '}',
-                    '}',
-                ], -1);
-
-                const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+                    ], -1);
     
-                expect(retornoAvaliadorSintatico.erros).toHaveLength(0);
+                    const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+        
+                    expect(retornoAvaliadorSintatico.erros).toHaveLength(0);
+                });
+    
+                it('Sucesso - decorador de classe com parametros', () => {
+                    const retornoLexador = lexador.mapear([
+                        '@decorador1(atributo1="123", atributo2=4)',
+                        'classe Teste {',
+                            '@decorador2(atributo1="123", atributo2=4)',
+                            'testeFuncao() {',
+                              'escreva("olá")',
+                            '}',
+                        '}',
+                    ], -1);
+    
+                    const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+        
+                    expect(retornoAvaliadorSintatico.erros).toHaveLength(0);
+                });
+    
+                it('Sucesso - decorador de classe/método', () => {
+                    const retornoLexador = lexador.mapear([
+                        '@meu.decorador1',
+                        'classe Teste {',
+                            '@meu.decorador2',
+                            'testeFuncao() {',
+                              'escreva("olá")',
+                            '}',
+                        '}',
+                    ], -1);
+    
+                    const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+        
+                    expect(retornoAvaliadorSintatico.erros).toHaveLength(0);
+                });
+    
+                it('Sucesso - decorador de classe/método/propriedade', () => {
+                    const retornoLexador = lexador.mapear([
+                        '@meu.decorador1',
+                        'classe Teste {',
+                            '@meu.decorador3',
+                            'propriedade1: texto',
+                            '@meu.decorador2',
+                            'testeFuncao() {',
+                              'escreva("olá")',
+                            '}',
+                        '}',
+                    ], -1);
+    
+                    const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+        
+                    expect(retornoAvaliadorSintatico.erros).toHaveLength(0);
+                });
+            });
+        });
+
+        describe('Declarações de tuplas', () => {
+            it('Dupla', () => {
+                const retornoLexador = lexador.mapear([
+                    'var t = [(1, 2)]'
+                ], -1);
+                const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+
+                expect(retornoAvaliadorSintatico).toBeTruthy();
+                expect(retornoAvaliadorSintatico.declaracoes).toHaveLength(1);
+            });
+
+            it('Trio', () => {
+                const retornoLexador = lexador.mapear([
+                    'var t = [(1, 2, 3)]'
+                ], -1);
+                const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+
+                expect(retornoAvaliadorSintatico).toBeTruthy();
+                expect(retornoAvaliadorSintatico.declaracoes).toHaveLength(1);
+            });
+
+            it('Quarteto', () => {
+                const retornoLexador = lexador.mapear([
+                    'var t = [(1, 2, 3, 4)]'
+                ], -1);
+                const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+
+                expect(retornoAvaliadorSintatico).toBeTruthy();
+                expect(retornoAvaliadorSintatico.declaracoes).toHaveLength(1);
+            });
+
+            it('Quinteto', () => {
+                const retornoLexador = lexador.mapear([
+                    'var t = [(1, 2, 3, 4, 5)]'
+                ], -1);
+                const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+
+                expect(retornoAvaliadorSintatico).toBeTruthy();
+                expect(retornoAvaliadorSintatico.declaracoes).toHaveLength(1);
+            });
+
+            it('Sexteto', () => {
+                const retornoLexador = lexador.mapear([
+                    'var t = [(1, 2, 3, 4, 5, 6)]'
+                ], -1);
+                const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+
+                expect(retornoAvaliadorSintatico).toBeTruthy();
+                expect(retornoAvaliadorSintatico.declaracoes).toHaveLength(1);
+            });
+
+            it('Septeto', () => {
+                const retornoLexador = lexador.mapear([
+                    'var t = [(1, 2, 3, 4, 5, 6, 7)]'
+                ], -1);
+                const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+
+                expect(retornoAvaliadorSintatico).toBeTruthy();
+                expect(retornoAvaliadorSintatico.declaracoes).toHaveLength(1);
+            });
+
+            it('Octeto', () => {
+                const retornoLexador = lexador.mapear([
+                    'var t = [(1, 2, 3, 4, 5, 6, 7, 8)]'
+                ], -1);
+                const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+
+                expect(retornoAvaliadorSintatico).toBeTruthy();
+                expect(retornoAvaliadorSintatico.declaracoes).toHaveLength(1);
+            });
+
+            it('Noneto', () => {
+                const retornoLexador = lexador.mapear([
+                    'var t = [(1, 2, 3, 4, 5, 6, 7, 8, 9)]'
+                ], -1);
+                const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+
+                expect(retornoAvaliadorSintatico).toBeTruthy();
+                expect(retornoAvaliadorSintatico.declaracoes).toHaveLength(1);
+            });
+
+            it('Deceto', () => {
+                const retornoLexador = lexador.mapear([
+                    'var t = [(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)]'
+                ], -1);
+                const retornoAvaliadorSintatico = avaliadorSintatico.analisar(retornoLexador, -1);
+
+                expect(retornoAvaliadorSintatico).toBeTruthy();
+                expect(retornoAvaliadorSintatico.declaracoes).toHaveLength(1);
             });
         });
 

@@ -1,7 +1,8 @@
-import { Atribuir, Construto, ExpressaoRegular, FimPara, FormatacaoEscrita, Literal, QualTipo, Super, TipoDe, Variavel } from '../../../construtos';
+import { Atribuir, Construto, ExpressaoRegular, FimPara, FormatacaoEscrita, Literal, QualTipo, Super, TipoDe, Tupla, Variavel } from '../../../construtos';
 import {
     Aleatorio,
     Bloco,
+    CabecalhoPrograma,
     Classe,
     Const,
     ConstMultiplo,
@@ -39,6 +40,7 @@ import { PilhaEscoposExecucao } from '../../pilha-escopos-execucao';
 
 import tiposDeSimbolos from '../../../tipos-de-simbolos/portugol-ipt';
 import { inferirTipoVariavel } from '../../inferenciador';
+import { InicioAlgoritmo } from '../../../declaracoes/inicio-algoritmo';
 
 export class InterpretadorPortugolIpt implements InterpretadorInterface {
     diretorioBase: any;
@@ -74,12 +76,27 @@ export class InterpretadorPortugolIpt implements InterpretadorInterface {
         };
         this.pilhaEscoposExecucao.empilhar(escopoExecucao);
     }
+
+    visitarDeclaracaoInicioAlgoritmo(declaracao: InicioAlgoritmo): Promise<any> {
+        throw new Error('Método não implementado.');
+    }
+
+    visitarDeclaracaoCabecalhoPrograma(declaracao: CabecalhoPrograma): Promise<any> {
+        throw new Error('Método não implementado.');
+    }
+
+    visitarExpressaoTupla(expressao: Tupla): Promise<any> {
+        throw new Error('Método não implementado.');
+    }
+
     visitarExpressaoAcessoElementoMatriz(expressao: any) {
         throw new Error('Método não implementado.');
     }
+
     visitarExpressaoAtribuicaoPorIndicesMatriz(expressao: any): Promise<any> {
         throw new Error('Método não implementado.');
     }
+    
     visitarExpressaoExpressaoRegular(expressao: ExpressaoRegular): Promise<any> {
         throw new Error('Método não implementado.');
     }

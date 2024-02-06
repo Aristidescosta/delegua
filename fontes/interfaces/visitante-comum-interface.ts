@@ -1,7 +1,8 @@
-import { Atribuir, ExpressaoRegular, FimPara, Literal, Super, TipoDe } from '../construtos';
+import { AcessoMetodoOuPropriedade, Atribuir, ExpressaoRegular, FimPara, Literal, Super, TipoDe, Tupla } from '../construtos';
 import {
     Aleatorio,
     Bloco,
+    CabecalhoPrograma,
     Classe,
     Const,
     Continua,
@@ -28,9 +29,12 @@ import { FormatacaoEscrita } from '../construtos/formatacao-escrita';
 import { LeiaMultiplo } from '../declaracoes/leia-multiplo';
 import { ConstMultiplo } from '../declaracoes/const-multiplo';
 import { VarMultiplo } from '../declaracoes/var-multiplo';
+import { InicioAlgoritmo } from '../declaracoes/inicio-algoritmo';
 
 export interface VisitanteComumInterface {
-    visitarDeclaracaoAleatorio(declaracao: Aleatorio): Promise<any>
+    visitarDeclaracaoInicioAlgoritmo(declaracao: InicioAlgoritmo): Promise<any>;
+    visitarDeclaracaoAleatorio(declaracao: Aleatorio): Promise<any>;
+    visitarDeclaracaoCabecalhoPrograma(declaracao: CabecalhoPrograma): Promise<any>;
     visitarDeclaracaoClasse(declaracao: Classe): any;
     visitarDeclaracaoConst(declaracao: Const): Promise<any>;
     visitarDeclaracaoConstMultiplo(declaracao: ConstMultiplo): Promise<any>;
@@ -50,7 +54,7 @@ export interface VisitanteComumInterface {
     visitarDeclaracaoVarMultiplo(declaracao: VarMultiplo): Promise<any>;
     visitarExpressaoAcessoIndiceVariavel(expressao: any): any;
     visitarExpressaoAcessoElementoMatriz(expressao: any): any;
-    visitarExpressaoAcessoMetodo(expressao: any): any;
+    visitarExpressaoAcessoMetodo(expressao: AcessoMetodoOuPropriedade): any;
     visitarExpressaoAgrupamento(expressao: any): Promise<any>;
     visitarExpressaoAtribuicaoPorIndice(expressao: any): Promise<any>;
     visitarExpressaoAtribuicaoPorIndicesMatriz(expressao: any): Promise<any>;
@@ -75,6 +79,7 @@ export interface VisitanteComumInterface {
     visitarExpressaoRetornar(declaracao: Retorna): Promise<RetornoQuebra>;
     visitarExpressaoSuper(expressao: Super): any;
     visitarExpressaoSustar(declaracao?: Sustar): SustarQuebra;
+    visitarExpressaoTupla(expressao: Tupla): Promise<any>;
     visitarExpressaoTipoDe(expressao: TipoDe): Promise<any>;
     visitarExpressaoUnaria(expressao: any): any;
     visitarExpressaoVetor(expressao: any): any;

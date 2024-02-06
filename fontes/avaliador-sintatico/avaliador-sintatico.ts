@@ -57,6 +57,7 @@ import { RetornoLexador } from '../interfaces/retornos/retorno-lexador';
 import { RetornoDeclaracao } from './retornos';
 import { TiposDadosInterface } from '../interfaces/tipos-dados-interface';
 import { Simbolo } from '../lexador';
+import { SeletorTuplas, Tupla } from '../construtos/tuplas';
 
 /**
  * O avaliador sintático (_Parser_) é responsável por transformar os símbolos do Lexador em estruturas de alto nível.
@@ -191,7 +192,21 @@ export class AvaliadorSintatico implements AvaliadorSintaticoInterface<SimboloIn
                 }
 
                 while (!this.verificarSeSimboloAtualEIgualA(tiposDeSimbolos.COLCHETE_DIREITO)) {
-                    const valor = this.atribuir();
+                    let valor: any = null;
+                    if(this.verificarSeSimboloAtualEIgualA(tiposDeSimbolos.PARENTESE_ESQUERDO)) {
+                        const expressao = this.expressao();
+                        const argumentos = [expressao];
+                        while (this.simbolos[this.atual].tipo === tiposDeSimbolos.VIRGULA) {
+                            this.avancarEDevolverAnterior();
+                            argumentos.push(this.expressao());
+                        }
+        
+                        this.consumir(tiposDeSimbolos.PARENTESE_DIREITO, "Esperado ')' após a expressão.");
+                        this.consumir(tiposDeSimbolos.COLCHETE_DIREITO, "Esperado ']' após a expressão.");
+                        return new SeletorTuplas(...argumentos) as Tupla;
+                    }
+
+                    valor = this.atribuir();
                     valores.push(valor);
                     if (this.simbolos[this.atual].tipo !== tiposDeSimbolos.COLCHETE_DIREITO) {
                         this.consumir(tiposDeSimbolos.VIRGULA, 'Esperado vírgula antes da próxima expressão.');
@@ -942,13 +957,26 @@ export class AvaliadorSintatico implements AvaliadorSintaticoInterface<SimboloIn
         this.pilhaDecoradores = []
         while (this.verificarTipoSimboloAtual(tiposDeSimbolos.ARROBA)) {
             let nomeDecorador: string = '';
-            let linha = this.simbolos[this.atual].linha;
+            let linha: number;
+            let parametros = [];
+            let parenteseEsquerdo = false;
+            linha = this.simbolos[this.atual].linha;
             let simbolosLinhaAtual = this.simbolos.filter((l) => l.linha === linha);
-            nomeDecorador += simbolosLinhaAtual.map(l => {
+
+            for (let simbolo of simbolosLinhaAtual) {
+                parenteseEsquerdo = this.verificarSeSimboloAtualEIgualA(tiposDeSimbolos.PARENTESE_ESQUERDO)
+                if(parenteseEsquerdo) {
+                    if (!this.verificarTipoSimboloAtual(tiposDeSimbolos.PARENTESE_DIREITO)) {
+                        parametros = this.logicaComumParametros();
+                    }
+                    this.consumir(tiposDeSimbolos.PARENTESE_DIREITO, "Esperado ')' após parâmetros.");
+                    break;
+                }
                 this.avancarEDevolverAnterior()
-                return l.lexema || '.'
-            }).join('')
-            this.pilhaDecoradores.push(new Decorador(this.hashArquivo, linha, nomeDecorador));
+                nomeDecorador += simbolo.lexema || '.'
+            }
+
+            this.pilhaDecoradores.push(new Decorador(this.hashArquivo, linha, nomeDecorador, parametros));
         }
     }
 
@@ -1188,10 +1216,10 @@ export class AvaliadorSintatico implements AvaliadorSintaticoInterface<SimboloIn
 
     funcao(tipo: string): FuncaoDeclaracao {
         let simbolo: SimboloInterface;
-        this.resolverDecorador();
         switch (this.simbolos[this.atual].tipo) {
             case tiposDeSimbolos.CONSTRUTOR:
                 simbolo = this.avancarEDevolverAnterior();
+                this.pilhaDecoradores = [];
                 break;
             default:
                 simbolo = this.consumir(tiposDeSimbolos.IDENTIFICADOR, `Esperado nome de ${tipo}.`);
@@ -1275,6 +1303,7 @@ export class AvaliadorSintatico implements AvaliadorSintaticoInterface<SimboloIn
 
         this.consumir(tiposDeSimbolos.CHAVE_ESQUERDA, "Esperado '{' antes do escopo da classe.");
 
+        this.pilhaDecoradores = [];
         const metodos = [];
         const propriedades = [];
         while (!this.verificarTipoSimboloAtual(tiposDeSimbolos.CHAVE_DIREITA) && !this.estaNoFinal()) {
@@ -1291,17 +1320,21 @@ export class AvaliadorSintatico implements AvaliadorSintaticoInterface<SimboloIn
             switch (proximoSimbolo.tipo) {
                 case tiposDeSimbolos.PARENTESE_ESQUERDO:
                     metodos.push(this.funcao('método'));
+                    this.pilhaDecoradores = [];
                     break;
                 case tiposDeSimbolos.DOIS_PONTOS:
                     const nomePropriedade = this.consumir(tiposDeSimbolos.IDENTIFICADOR, 'Esperado identificador para nome de propriedade.');
                     this.consumir(tiposDeSimbolos.DOIS_PONTOS, 'Esperado dois-pontos após nome de propriedade.');
                     const tipoPropriedade = this.avancarEDevolverAnterior();
+                    this.verificarSeSimboloAtualEIgualA(tiposDeSimbolos.PONTO_E_VIRGULA);
                     propriedades.push(
                         new PropriedadeClasse(
                             nomePropriedade,
-                            tipoPropriedade.lexema
+                            tipoPropriedade.lexema,
+                            this.pilhaDecoradores
                         )
                     );
+                    this.pilhaDecoradores = [];
                     break;
                 default:
                     throw this.erro(this.simbolos[this.atual], 'Esperado definição de método ou propriedade.');

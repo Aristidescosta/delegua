@@ -10,7 +10,11 @@ import {
     Unario,
     Variavel,
 } from '../../../construtos';
+<<<<<<< HEAD
 import { Aleatorio, Declaracao, Expressao, Leia, Para } from '../../../declaracoes';
+=======
+import { Aleatorio, CabecalhoPrograma, Declaracao, Expressao, Leia, Para } from '../../../declaracoes';
+>>>>>>> 52d5116c22c38d6a676366f4929a2c52d653714a
 import { Simbolo } from '../../../lexador';
 import { SimboloInterface, VariavelInterface } from '../../../interfaces';
 import { inferirTipoVariavel } from '../../inferenciador';
@@ -18,6 +22,15 @@ import { inferirTipoVariavel } from '../../inferenciador';
 import tiposDeSimbolos from '../../../tipos-de-simbolos/visualg';
 import { ErroEmTempoDeExecucao } from '../../../excecoes';
 import { InterpretadorBase } from '../../interpretador-base';
+import { InicioAlgoritmo } from '../../../declaracoes/inicio-algoritmo';
+
+export async function visitarDeclaracaoCabecalhoPrograma(interpretador: InterpretadorBase, declaracao: CabecalhoPrograma): Promise<any> {
+    return Promise.resolve();
+}
+
+export async function visitarDeclaracaoInicioAlgoritmo(interpretador: InterpretadorBase, declaracao: InicioAlgoritmo): Promise<any> {
+    return Promise.resolve();
+}
 
 export async function atribuirVariavel(
     interpretador: InterpretadorBase,
@@ -392,7 +405,11 @@ export async function visitarExpressaoAtribuicaoPorIndicesMatriz(interpretador: 
     );
 }
 
+<<<<<<< HEAD
 function encontrarLeiaNoAleatorio(interpretador: InterpretadorBase, declaracao: Declaracao, menorNumero: number, maiorNumero: number) {
+=======
+async function encontrarLeiaNoAleatorio(interpretador: InterpretadorBase, declaracao: Declaracao, menorNumero: number, maiorNumero: number) {
+>>>>>>> 52d5116c22c38d6a676366f4929a2c52d653714a
     if ('declaracoes' in declaracao) {
         // Se a declaração tiver um campo 'declaracoes', ela é um Bloco
         const declaracoes = declaracao.declaracoes as Declaracao[]
@@ -402,7 +419,14 @@ function encontrarLeiaNoAleatorio(interpretador: InterpretadorBase, declaracao: 
     } else if (declaracao instanceof Leia) {
         // Se encontrarmos um Leia, podemos efetuar as operações imediatamente
         for (const argumento of declaracao.argumentos) {
+<<<<<<< HEAD
             atribuirVariavel(interpretador, argumento, gerarNumeroAleatorio(menorNumero, maiorNumero))
+=======
+            const arg1 = await interpretador.avaliar(argumento);
+            const tipoDe = arg1.tipo || inferirTipoVariavel(arg1)
+            const valor = tipoDe === "texto" ? palavraAleatoriaCom5Digitos() : gerarNumeroAleatorio(menorNumero, maiorNumero)
+            atribuirVariavel(interpretador, argumento, valor)
+>>>>>>> 52d5116c22c38d6a676366f4929a2c52d653714a
         }
     }
 }
@@ -411,7 +435,23 @@ function gerarNumeroAleatorio(min: number, max: number) {
     return Math.floor(Math.random() * (max - min) + min);
 }
 
+<<<<<<< HEAD
 export async function visitarDeclaracaoAleatorio(interpretador: InterpretadorBase, expressao: Aleatorio): Promise<any> {
+=======
+function palavraAleatoriaCom5Digitos(): string {
+    const caracteres = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let palavra = "";
+
+    for (let i = 0; i < 5; i++) {
+        const indiceAleatorio = Math.floor(Math.random() * caracteres.length);
+        palavra += caracteres.charAt(indiceAleatorio);
+    }
+    return palavra;
+}
+
+export async function visitarDeclaracaoAleatorio(interpretador: InterpretadorBase, expressao: Aleatorio): Promise<any> {
+    let retornoExecucao: any;
+>>>>>>> 52d5116c22c38d6a676366f4929a2c52d653714a
     try {
         let menorNumero = 0;
         let maiorNumero = 100
@@ -423,6 +463,10 @@ export async function visitarDeclaracaoAleatorio(interpretador: InterpretadorBas
         }
         for (let corpoDeclaracao of expressao.corpo.declaracoes) {
             encontrarLeiaNoAleatorio(interpretador, corpoDeclaracao, menorNumero, maiorNumero);
+<<<<<<< HEAD
+=======
+            retornoExecucao = await interpretador.executar(corpoDeclaracao)
+>>>>>>> 52d5116c22c38d6a676366f4929a2c52d653714a
         }
 
     } catch (error) {
@@ -434,7 +478,11 @@ export async function visitarDeclaracaoAleatorio(interpretador: InterpretadorBas
         return Promise.reject(error)
     }
 
+<<<<<<< HEAD
     return Promise.resolve();
+=======
+    return retornoExecucao;
+>>>>>>> 52d5116c22c38d6a676366f4929a2c52d653714a
 }
 
 

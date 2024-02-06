@@ -1,7 +1,9 @@
 import { RetornoLexador, RetornoAvaliadorSintatico } from '../../../interfaces/retornos';
 import { AvaliadorSintaticoBase } from '../../avaliador-sintatico-base';
 import {
+    Aleatorio,
     Bloco,
+    CabecalhoPrograma,
     Declaracao,
     Enquanto,
     Escolha,
@@ -41,8 +43,8 @@ import { Simbolo } from '../../../lexador';
 import tiposDeSimbolos from '../../../tipos-de-simbolos/visualg';
 import { ParametroVisuAlg } from './parametro-visualg';
 import { TiposDadosInterface } from '../../../interfaces/tipos-dados-interface';
-import { Aleatorio } from '../../../declaracoes/aleatorio';
 import { ErroAvaliadorSintatico } from '../../erro-avaliador-sintatico';
+import { InicioAlgoritmo } from '../../../declaracoes/inicio-algoritmo';
 
 export class AvaliadorSintaticoVisuAlg extends AvaliadorSintaticoBase {
     blocoPrincipalIniciado: boolean;
@@ -59,12 +61,14 @@ export class AvaliadorSintaticoVisuAlg extends AvaliadorSintaticoBase {
         this.blocoPrincipalIniciado = false;
     }
 
-    private validarSegmentoAlgoritmo(): void {
+    private validarSegmentoAlgoritmo(): SimboloInterface {
         this.consumir(tiposDeSimbolos.ALGORITMO, "Esperada expressão 'algoritmo' para inicializar programa.");
 
-        this.consumir(tiposDeSimbolos.CARACTERE, "Esperada cadeia de caracteres após palavra-chave 'algoritmo'.");
+        const descricaoAlgoritmo = this.consumir(tiposDeSimbolos.CARACTERE, "Esperada cadeia de caracteres após palavra-chave 'algoritmo'.");
 
         this.consumir(tiposDeSimbolos.QUEBRA_LINHA, "Esperado quebra de linha após definição do segmento 'algoritmo'.");
+
+        return descricaoAlgoritmo;
     }
 
     private criarVetorNDimensional(dimensoes: number[]) {
@@ -272,11 +276,12 @@ export class AvaliadorSintaticoVisuAlg extends AvaliadorSintaticoBase {
         return inicializacoes;
     }
 
-    private validarSegmentoInicio(algoritmoOuFuncao: string): void {
-        this.consumir(
+    private validarSegmentoInicio(algoritmoOuFuncao: string): SimboloInterface {
+        const simboloInicio = this.consumir(
             tiposDeSimbolos.INICIO,
             `Esperada expressão 'inicio' para marcar escopo de ${algoritmoOuFuncao}.`
         );
+        return simboloInicio;
     }
 
     estaNoFinal(): boolean {
@@ -1178,8 +1183,8 @@ export class AvaliadorSintaticoVisuAlg extends AvaliadorSintaticoBase {
             case tiposDeSimbolos.FUNCAO:
                 return this.funcao('funcao');
             case tiposDeSimbolos.INICIO:
-                this.validarSegmentoInicio('algoritmo');
-                return null;
+                const simboloInicio = this.validarSegmentoInicio('algoritmo');
+                return new InicioAlgoritmo(simboloInicio.linha, simboloInicio.hashArquivo);
             case tiposDeSimbolos.INTERROMPA:
                 return this.declaracaoInterrompa();
             case tiposDeSimbolos.LEIA:
@@ -1243,8 +1248,9 @@ export class AvaliadorSintaticoVisuAlg extends AvaliadorSintaticoBase {
             this.avancarEDevolverAnterior();
         }
 
-        let declaracoes = [];
-        this.validarSegmentoAlgoritmo();
+        let declaracoes: Declaracao[] = [];
+        const simboloNomeAlgoritmo = this.validarSegmentoAlgoritmo();
+        declaracoes.push(new CabecalhoPrograma(simboloNomeAlgoritmo.linha, simboloNomeAlgoritmo.hashArquivo, simboloNomeAlgoritmo.literal));
 
         while (!this.estaNoFinal() && this.simbolos[this.atual].tipo !== tiposDeSimbolos.FIM_ALGORITMO) {
             const declaracao = this.resolverDeclaracaoForaDeBloco();
@@ -1258,7 +1264,7 @@ export class AvaliadorSintaticoVisuAlg extends AvaliadorSintaticoBase {
         const ultimoSimbolo = this.simbolos[this.simbolos.length - 1];
         if (ultimoSimbolo.tipo !== tiposDeSimbolos.FIM_ALGORITMO) {
             throw new ErroAvaliadorSintatico(
-                ultimoSimbolo, 
+                ultimoSimbolo,
                 `Programa não termina com 'fimalgoritmo'. Último símbolo: '${ultimoSimbolo.lexema || ultimoSimbolo.literal}'.`
             );
         }

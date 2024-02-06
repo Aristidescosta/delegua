@@ -1,7 +1,8 @@
-import { Atribuir, Chamada, ExpressaoRegular, FimPara, FormatacaoEscrita, FuncaoConstruto, Literal, Super, TipoDe, Variavel, Vetor } from "../../construtos";
+import { Atribuir, Chamada, ExpressaoRegular, FimPara, FormatacaoEscrita, FuncaoConstruto, Literal, Super, TipoDe, Tupla, Variavel, Vetor } from "../../construtos";
 import {
     Aleatorio,
     Bloco,
+    CabecalhoPrograma,
     Classe,
     Const,
     ConstMultiplo,
@@ -26,6 +27,7 @@ import {
     Var,
     VarMultiplo
 } from "../../declaracoes";
+import { InicioAlgoritmo } from "../../declaracoes/inicio-algoritmo";
 import { SimboloInterface } from "../../interfaces";
 import { AnalisadorSemanticoInterface } from "../../interfaces/analisador-semantico-interface";
 import { DiagnosticoAnalisadorSemantico, DiagnosticoSeveridade } from "../../interfaces/erros";
@@ -49,6 +51,18 @@ export class AnalisadorSemanticoVisuAlg implements AnalisadorSemanticoInterface 
         this.funcoes = {};
         this.atual = 0;
         this.diagnosticos = [];
+    }
+
+    visitarDeclaracaoInicioAlgoritmo(declaracao: InicioAlgoritmo): Promise<any> {
+        return Promise.resolve();
+    }
+    
+    visitarDeclaracaoCabecalhoPrograma(declaracao: CabecalhoPrograma): Promise<any> {
+        return Promise.resolve();
+    }
+
+    visitarExpressaoTupla(expressao: Tupla): Promise<any> {
+        return Promise.resolve();
     }
 
     erro(simbolo: SimboloInterface, mensagem: string): void {

@@ -11,6 +11,7 @@ import { InterpretadorInterface, ParametroInterface, SimboloInterface, VariavelI
 import {
     Aleatorio,
     Bloco,
+    CabecalhoPrograma,
     Classe,
     Const,
     ConstMultiplo,
@@ -46,6 +47,7 @@ import {
 } from '../estruturas';
 import {
     AcessoIndiceVariavel,
+    AcessoMetodoOuPropriedade,
     Agrupamento,
     Atribuir,
     Binario,
@@ -59,6 +61,7 @@ import {
     QualTipo,
     Super,
     TipoDe,
+    Tupla,
     Unario,
     Variavel,
     Vetor,
@@ -71,13 +74,17 @@ import { ContinuarQuebra, Quebra, RetornoQuebra, SustarQuebra } from '../quebras
 import { PilhaEscoposExecucaoInterface } from '../interfaces/pilha-escopos-execucao-interface';
 import { inferirTipoVariavel } from './inferenciador';
 import { MetodoPrimitiva } from '../estruturas/metodo-primitiva';
+import { ArgumentoInterface } from './argumento-interface';
 
+import primitivasDicionario from '../bibliotecas/primitivas-dicionario';
+import primitivasNumero from '../bibliotecas/primitivas-numero';
 import primitivasTexto from '../bibliotecas/primitivas-texto';
 import primitivasVetor from '../bibliotecas/primitivas-vetor';
+
 import tiposDeSimbolos from '../tipos-de-simbolos/delegua';
-import { ArgumentoInterface } from './argumento-interface';
-import tipoDeDadosPrimitivos from '../tipos-de-dados/primitivos'
-import tipoDeDadosDelegua from '../tipos-de-dados/delegua'
+import tipoDeDadosPrimitivos from '../tipos-de-dados/primitivos';
+import tipoDeDadosDelegua from '../tipos-de-dados/delegua';
+import { InicioAlgoritmo } from '../declaracoes/inicio-algoritmo';
 
 /**
  * O Interpretador visita todos os elementos complexos gerados pelo avaliador sintático (_parser_),
@@ -155,15 +162,35 @@ export class InterpretadorBase implements InterpretadorInterface {
 
         carregarBibliotecasGlobais(this, this.pilhaEscoposExecucao);
     }
+
+    async visitarDeclaracaoInicioAlgoritmo(declaracao: InicioAlgoritmo): Promise<any> {
+        throw new Error('Método não implementado.');
+    }
+
+    async visitarDeclaracaoCabecalhoPrograma(declaracao: CabecalhoPrograma): Promise<any> {
+        throw new Error('Método não implementado.');
+    }
+
+    async visitarExpressaoTupla(expressao: any): Promise<any> {
+        const chaves = Object.keys(expressao)
+        const valores = [];
+        for (let chave of chaves) {
+            const valor = await this.avaliar(expressao[chave])
+            valores.push(valor);
+        }
+
+        return valores;
+    }
+
     visitarExpressaoAtribuicaoPorIndicesMatriz(expressao: any): Promise<any> {
         throw new Error('Método não implementado.');
     }
+
     visitarExpressaoAcessoElementoMatriz(expressao: any) {
         throw new Error('Método não implementado.');
     }
 
-    //https://stackoverflow.com/a/66751666/9043143
-    textoParaRegex(texto): any {
+    protected textoParaRegex(texto: string): RegExp {
         const match = texto.match(/^([\/~@;%#'])(.*?)\1([gimsuy]*)$/);
         return match
             ? new RegExp(
@@ -177,7 +204,7 @@ export class InterpretadorBase implements InterpretadorInterface {
     }
 
     visitarExpressaoExpressaoRegular(expressao: ExpressaoRegular): Promise<RegExp> {
-        return this.textoParaRegex(expressao.valor);
+        return Promise.resolve(this.textoParaRegex(expressao.valor));
     }
 
     async visitarExpressaoTipoDe(expressao: TipoDe): Promise<string> {
@@ -283,11 +310,8 @@ export class InterpretadorBase implements InterpretadorInterface {
             if (elemento?.valor?.tipo === tipoDeDadosDelegua.LOGICO) {
                 textoFinal = textoFinal.replace('${' + elemento.variavel + '}', this.paraTexto(elemento?.valor?.valor));
             } else {
-                const valor = elemento?.valor?.hasOwnProperty('valor') ? elemento?.valor.valor : elemento?.valor
-                textoFinal = textoFinal.replace(
-                    '${' + elemento.variavel + '}',
-                    `${this.paraTexto(valor)}`
-                );
+                const valor = elemento?.valor?.hasOwnProperty('valor') ? elemento?.valor.valor : elemento?.valor;
+                textoFinal = textoFinal.replace('${' + elemento.variavel + '}', `${this.paraTexto(valor)}`);
             }
         });
 
@@ -418,7 +442,10 @@ export class InterpretadorBase implements InterpretadorInterface {
         const tipoConteudo: string = conteudo.hasOwnProperty('tipo') ? conteudo.tipo : typeof conteudo;
 
         resultado = valorConteudo;
-        if ([tipoDeDadosDelegua.NUMERO, tipoDeDadosPrimitivos.NUMERO].includes(tipoConteudo) && declaracao.casasDecimais > 0) {
+        if (
+            [tipoDeDadosDelegua.NUMERO, tipoDeDadosPrimitivos.NUMERO].includes(tipoConteudo) &&
+            declaracao.casasDecimais > 0
+        ) {
             resultado = valorConteudo.toLocaleString('pt', { maximumFractionDigits: declaracao.casasDecimais });
         }
 
@@ -448,13 +475,21 @@ export class InterpretadorBase implements InterpretadorInterface {
         direita: VariavelInterface | any,
         esquerda: VariavelInterface | any
     ): void {
-        const tipoDireita: string = direita.tipo ? direita.tipo : typeof direita === tipoDeDadosPrimitivos.NUMERO ? tipoDeDadosDelegua.NUMERO : String(NaN);
+        const tipoDireita: string = direita.tipo
+            ? direita.tipo
+            : typeof direita === tipoDeDadosPrimitivos.NUMERO
+            ? tipoDeDadosDelegua.NUMERO
+            : String(NaN);
         const tipoEsquerda: string = esquerda.tipo
             ? esquerda.tipo
             : typeof esquerda === tipoDeDadosPrimitivos.NUMERO
             ? tipoDeDadosDelegua.NUMERO
             : String(NaN);
-        if (tipoDireita === tipoDeDadosDelegua.NUMERO && tipoEsquerda === tipoDeDadosDelegua.NUMERO) return;
+
+        const tiposNumericos = [tipoDeDadosDelegua.INTEIRO, tipoDeDadosDelegua.NUMERO, tipoDeDadosDelegua.NÚMERO];
+
+        if (tiposNumericos.includes(tipoDireita) && tiposNumericos.includes(tipoEsquerda)) return;
+
         throw new ErroEmTempoDeExecucao(operador, 'Operadores precisam ser números.', operador.linha);
     }
 
@@ -474,9 +509,9 @@ export class InterpretadorBase implements InterpretadorInterface {
             case tiposDeSimbolos.MAIOR:
                 if (tipoEsquerdo === tipoDeDadosDelegua.NUMERO && tipoDireito === tipoDeDadosDelegua.NUMERO) {
                     return Number(valorEsquerdo) > Number(valorDireito);
-                } else {
-                    return String(valorEsquerdo) > String(valorDireito);
                 }
+
+                return String(valorEsquerdo) > String(valorDireito);
 
             case tiposDeSimbolos.MAIOR_IGUAL:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
@@ -485,9 +520,9 @@ export class InterpretadorBase implements InterpretadorInterface {
             case tiposDeSimbolos.MENOR:
                 if (tipoEsquerdo === tipoDeDadosDelegua.NUMERO && tipoDireito === tipoDeDadosDelegua.NUMERO) {
                     return Number(valorEsquerdo) < Number(valorDireito);
-                } else {
-                    return String(valorEsquerdo) < String(valorDireito);
                 }
+
+                return String(valorEsquerdo) < String(valorDireito);
 
             case tiposDeSimbolos.MENOR_IGUAL:
                 this.verificarOperandosNumeros(expressao.operador, esquerda, direita);
@@ -500,11 +535,15 @@ export class InterpretadorBase implements InterpretadorInterface {
 
             case tiposDeSimbolos.ADICAO:
             case tiposDeSimbolos.MAIS_IGUAL:
-                if ([tipoDeDadosDelegua.NUMERO, tipoDeDadosDelegua.INTEIRO].includes(tipoEsquerdo) && [tipoDeDadosDelegua.NUMERO, tipoDeDadosDelegua.INTEIRO].includes(tipoDireito)) {
+                const tiposNumericos = [tipoDeDadosDelegua.INTEIRO, tipoDeDadosDelegua.NUMERO, tipoDeDadosDelegua.NÚMERO]
+                if (
+                    tiposNumericos.includes(tipoEsquerdo) &&
+                    tiposNumericos.includes(tipoDireito)
+                ) {
                     return Number(valorEsquerdo) + Number(valorDireito);
-                } else {
-                    return this.paraTexto(valorEsquerdo) + this.paraTexto(valorDireito);
                 }
+
+                return this.paraTexto(valorEsquerdo) + this.paraTexto(valorDireito);
 
             case tiposDeSimbolos.DIVISAO:
             case tiposDeSimbolos.DIVISAO_IGUAL:
@@ -1172,6 +1211,16 @@ export class InterpretadorBase implements InterpretadorInterface {
         let indice = promises[1];
         const valor = promises[2];
 
+        if (objeto.imutavel) {
+            return Promise.reject(
+                new ErroEmTempoDeExecucao(
+                    expressao.objeto.simbolo.lexema,
+                    'Não é possível modificar uma tupla. As tuplas são estruturas de dados imutáveis.',
+                    expressao.linha
+                )
+            );
+        }
+
         objeto = objeto.hasOwnProperty('valor') ? objeto.valor : objeto;
         indice = indice.hasOwnProperty('valor') ? indice.valor : indice;
 
@@ -1356,8 +1405,7 @@ export class InterpretadorBase implements InterpretadorInterface {
 
         deleguaClasse.dialetoRequerExpansaoPropriedadesEspacoVariaveis =
             this.expandirPropriedadesDeObjetosEmEspacoVariaveis;
-        deleguaClasse.dialetoRequerDeclaracaoPropriedades =
-            this.requerDeclaracaoPropriedades;
+        deleguaClasse.dialetoRequerDeclaracaoPropriedades = this.requerDeclaracaoPropriedades;
 
         // TODO: Recolocar isso se for necessário.
         /* if (superClasse !== null) {
@@ -1370,10 +1418,10 @@ export class InterpretadorBase implements InterpretadorInterface {
 
     /**
      * Executa um acesso a método, normalmente de um objeto de classe.
-     * @param expressao A expressão de acesso.
+     * @param {AcessoMetodoOuPropriedade} expressao A expressão de acesso.
      * @returns O resultado da execução.
      */
-    async visitarExpressaoAcessoMetodo(expressao: any): Promise<any> {
+    async visitarExpressaoAcessoMetodo(expressao: AcessoMetodoOuPropriedade): Promise<any> {
         const variavelObjeto: VariavelInterface = await this.avaliar(expressao.objeto);
         const objeto = variavelObjeto.hasOwnProperty('valor') ? variavelObjeto.valor : variavelObjeto;
 
@@ -1381,24 +1429,32 @@ export class InterpretadorBase implements InterpretadorInterface {
             return objeto.obter(expressao.simbolo) || null;
         }
 
-        // TODO: Possivelmente depreciar esta forma.
-        // Não parece funcionar em momento algum.
+        // Objeto simples do JavaScript, ou dicionário de Delégua.
         if (objeto.constructor === Object) {
+            const metodoDePrimitivaDicionario: Function = primitivasDicionario[expressao.simbolo.lexema];
+            if (metodoDePrimitivaDicionario) {
+                return new MetodoPrimitiva(objeto, metodoDePrimitivaDicionario);
+            }
+
             return objeto[expressao.simbolo.lexema] || null;
         }
 
-        // Função tradicional do JavaScript.
-        // Normalmente executa quando uma biblioteca é importada.
+        // Casos em que o objeto possui algum outro tipo que não o de objeto simples.
+        // Normalmente executam quando uma biblioteca é importada, e estamos tentando
+        // obter alguma propriedade ou método desse objeto.
+
+        // Caso 1: Função tradicional do JavaScript.
         if (typeof objeto[expressao.simbolo.lexema] === tipoDeDadosPrimitivos.FUNCAO) {
             return objeto[expressao.simbolo.lexema];
         }
 
-        // Objeto tradicional do JavaScript.
-        // Normalmente executa quando uma biblioteca é importada.
+        // Caso 2: Objeto tradicional do JavaScript.
         if (typeof objeto[expressao.simbolo.lexema] === tipoDeDadosPrimitivos.OBJETO) {
             return objeto[expressao.simbolo.lexema];
         }
 
+        // A partir daqui, presume-se que o objeto é uma das estruturas
+        // de Delégua.
         if (objeto instanceof DeleguaModulo) {
             return objeto.componentes[expressao.simbolo.lexema] || null;
         }
@@ -1408,14 +1464,25 @@ export class InterpretadorBase implements InterpretadorInterface {
             tipoObjeto = inferirTipoVariavel(variavelObjeto as any);
         }
 
+        // Como internamente um dicionário de Delégua é simplesmente um objeto de
+        // JavaScript, as primitivas de dicionário, especificamente, são tratadas
+        // mais acima.
         switch (tipoObjeto) {
+            case tipoDeDadosDelegua.INTEIRO:
+            case tipoDeDadosDelegua.NUMERO:
+            case tipoDeDadosDelegua.NÚMERO:
+                const metodoDePrimitivaNumero: Function = primitivasNumero[expressao.simbolo.lexema];
+                if (metodoDePrimitivaNumero) {
+                    return new MetodoPrimitiva(objeto, metodoDePrimitivaNumero);
+                }
+                break;
             case tipoDeDadosDelegua.TEXTO:
                 const metodoDePrimitivaTexto: Function = primitivasTexto[expressao.simbolo.lexema];
                 if (metodoDePrimitivaTexto) {
                     return new MetodoPrimitiva(objeto, metodoDePrimitivaTexto);
                 }
                 break;
-            case 'vetor':
+            case tipoDeDadosDelegua.VETOR:
                 const metodoDePrimitivaVetor: Function = primitivasVetor[expressao.simbolo.lexema];
                 if (metodoDePrimitivaVetor) {
                     return new MetodoPrimitiva(objeto, metodoDePrimitivaVetor);
@@ -1425,7 +1492,7 @@ export class InterpretadorBase implements InterpretadorInterface {
 
         return Promise.reject(
             new ErroEmTempoDeExecucao(
-                expressao.nome,
+                expressao.simbolo,
                 `Método para objeto ou primitiva não encontrado: ${expressao.simbolo.lexema}.`,
                 expressao.linha
             )
@@ -1436,8 +1503,7 @@ export class InterpretadorBase implements InterpretadorInterface {
         return this.procurarVariavel(expressao.palavraChave);
     }
 
-
-    visitarDeclaracaoAleatorio(declaracao: Aleatorio): Promise<any>{
+    visitarDeclaracaoAleatorio(declaracao: Aleatorio): Promise<any> {
         return Promise.resolve();
     }
 
@@ -1483,11 +1549,13 @@ export class InterpretadorBase implements InterpretadorInterface {
         const valorFinal = await this.avaliacaoDeclaracaoVarOuConst(declaracao);
 
         let subtipo;
-        if (declaracao.tipo !== undefined) {
+        if (declaracao.tipo !== undefined && declaracao.tipo !== null) {
             subtipo = declaracao.tipo;
         }
 
-        this.pilhaEscoposExecucao.definirVariavel(declaracao.simbolo.lexema, valorFinal, subtipo);
+        const eTupla = declaracao.inicializador instanceof Tupla;
+
+        this.pilhaEscoposExecucao.definirVariavel(declaracao.simbolo.lexema, valorFinal, subtipo, eTupla);
 
         return null;
     }
@@ -1528,8 +1596,9 @@ export class InterpretadorBase implements InterpretadorInterface {
 
         if (Array.isArray(objeto)) return objeto;
         if (objeto.valor instanceof ObjetoPadrao) return objeto.valor.paraTexto();
-        // TODO: Idealmente isso deveria devolver um texto estruturado representando o objeto.
-        if (objeto instanceof ObjetoDeleguaClasse) return objeto.toString();
+        if (objeto instanceof ObjetoDeleguaClasse
+            || objeto instanceof DeleguaFuncao)
+            return objeto.paraTexto();
         if (typeof objeto === tipoDeDadosPrimitivos.OBJETO) return JSON.stringify(objeto);
 
         return objeto.toString();
@@ -1542,7 +1611,6 @@ export class InterpretadorBase implements InterpretadorInterface {
      *                         pelo modo LAIR.
      */
     async executar(declaracao: Declaracao, mostrarResultado = false): Promise<any> {
-
         const resultado: any = await declaracao.aceitar(this);
         /* console.log("Resultado aceitar: " + resultado, this); */
         if (mostrarResultado) {

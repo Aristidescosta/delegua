@@ -5,7 +5,11 @@ import {
     registrarBibliotecaCaracteresVisuAlg,
 } from '../../../bibliotecas/dialetos/visualg';
 import { AcessoElementoMatriz, AtribuicaoPorIndicesMatriz, Binario, Construto, FimPara, Logico } from '../../../construtos';
+<<<<<<< HEAD
 import { EscrevaMesmaLinha, Escreva, Fazer, Leia, Const, Para, Bloco, Aleatorio } from '../../../declaracoes';
+=======
+import { EscrevaMesmaLinha, Escreva, Fazer, Leia, Const, Para, Bloco, Aleatorio, CabecalhoPrograma } from '../../../declaracoes';
+>>>>>>> 52d5116c22c38d6a676366f4929a2c52d653714a
 import { ContinuarQuebra, Quebra, SustarQuebra } from '../../../quebras';
 import { InterpretadorComDepuracao } from '../../interpretador-com-depuracao';
 import * as comum from './comum';
@@ -22,6 +26,14 @@ export class InterpretadorVisuAlgComDepuracao extends InterpretadorComDepuracao 
 
         registrarBibliotecaNumericaVisuAlg(this, this.pilhaEscoposExecucao);
         registrarBibliotecaCaracteresVisuAlg(this, this.pilhaEscoposExecucao);
+    }
+
+    async visitarDeclaracaoInicioAlgoritmo(declaracao: CabecalhoPrograma): Promise<any> {
+        return comum.visitarDeclaracaoInicioAlgoritmo(this, declaracao);
+    }
+
+    async visitarDeclaracaoCabecalhoPrograma(declaracao: CabecalhoPrograma): Promise<any> {
+        return comum.visitarDeclaracaoCabecalhoPrograma(this, declaracao);
     }
 
     visitarDeclaracaoConst(declaracao: Const): Promise<any> {
@@ -139,15 +151,24 @@ export class InterpretadorVisuAlgComDepuracao extends InterpretadorComDepuracao 
     }
 
     async visitarDeclaracaoPara(declaracao: Para): Promise<any> {
+        if (!declaracao.inicializada && declaracao.inicializador !== null) {
+            await this.avaliar(declaracao.inicializador as any);
+            if (declaracao.incrementar !== null) {
+                await comum.resolverIncrementoPara(this, declaracao);
+            }
+        }
+
+        declaracao.inicializada = true;
+
+        // Aqui precisamos clonar a declaração `Para` porque inserimos
+        // ao final dela o incremento. Diferente de declarações `Para` de
+        // outros dialetos, o incremento dessa declaração é implícito. 
         const cloneDeclaracao = _.cloneDeep(declaracao) as Para;
         const corpoExecucao = cloneDeclaracao.corpo as Bloco;
-        if (cloneDeclaracao.inicializador !== null) {
-            await this.avaliar(cloneDeclaracao.inicializador as any);
-            // O incremento vai ao final do bloco de escopo.
-            if (cloneDeclaracao.incrementar !== null) {
-                await comum.resolverIncrementoPara(this, cloneDeclaracao);
-                corpoExecucao.declaracoes.push(cloneDeclaracao.incrementar);
-            }
+        // O incremento vai ao final do bloco de escopo.
+        if (cloneDeclaracao.incrementar !== null) {
+            await comum.resolverIncrementoPara(this, cloneDeclaracao);
+            corpoExecucao.declaracoes.push(cloneDeclaracao.incrementar);
         }
 
         const escopoAtual = this.pilhaEscoposExecucao.topoDaPilha();
