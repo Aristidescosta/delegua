@@ -1,3 +1,5 @@
+import { TIPO_NATIVO } from "../interpretador";
+
 export interface VariavelInterface {
     valor: any;
     tipo:
@@ -11,8 +13,9 @@ export interface VariavelInterface {
         | 'função'
         | 'símbolo'
         | 'objeto'
-        | 'módulo';
-    subtipo?: 'texto' | 'número' | 'longo' | 'lógico';
+        | 'módulo'
+        | TIPO_NATIVO
+    subtipo?: 'texto' | 'número' | 'longo' | 'lóg ico';
     imutavel: boolean;
     nomeReferencia?: string;
 }
